@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Days Left In Boston</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f7f4;
+      --panel: #ffffff;
+      --text: #202124;
+      --muted: #646970;
+      --line: #deded8;
+      --accent: #1f7a8c;
+      --accent-strong: #0f4c5c;
+      --warn: #b45309;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      width: min(100%, 720px);
+      background: var(--panel);
+      padding: 2rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px #00000012;
+    }
+
+    h1 {
+      margin: 0 0 1.5rem;
+      font-size: clamp(1.7rem, 5vw, 2.25rem);
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+
+    input[type="datetime-local"] {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.65rem 0.7rem;
+      border: 1px solid #c9cac4;
+      border-radius: 6px;
+      color: var(--text);
+      font: inherit;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 1rem 0 1.5rem;
+    }
+
+    .stat {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf9;
+      min-width: 0;
+    }
+
+    .stat-value {
+      display: block;
+      color: var(--accent-strong);
+      font-size: clamp(1.55rem, 7vw, 2.15rem);
+      font-weight: 700;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 0.4rem;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .details {
+      margin-top: 1rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .details strong { color: var(--text); }
+    .expired { color: var(--warn); }
+
+    @media (max-width: 560px) {
+      body { padding: 1rem; }
+      .container { padding: 1.25rem; }
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>Days Left In Boston</h1>
+
+    <label>
+      Countdown to:
+      <input type="datetime-local" id="targetTime" value="2026-07-31T12:00" />
+    </label>
+
+    <section class="stats" aria-live="polite">
+      <div class="stat">
+        <span class="stat-value" id="daysLeft">0</span>
+        <span class="stat-label">days left</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="hoursLeft">0</span>
+        <span class="stat-label">total hours left</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="minutesLeft">0</span>
+        <span class="stat-label">total minutes left</span>
+      </div>
+    </section>
+
+    <div class="details">
+      <div id="targetSummary"></div>
+      <div id="statusLine"></div>
+    </div>
+  </main>
+
+  <script>
+    const targetInput = document.getElementById('targetTime');
+    const formatter = new Intl.NumberFormat();
+
+    function formatWholeNumber(value) {
+      return formatter.format(Math.max(0, value));
+    }
+
+    function updateCountdown() {
+      const target = new Date(targetInput.value);
+      const now = new Date();
+      const targetMs = target.getTime();
+      const hasValidTarget = !Number.isNaN(targetMs);
+      const remainingMs = target - now;
+      const remainingPositiveMs = Math.max(0, remainingMs);
+
+      const days = hasValidTarget ? Math.ceil(remainingPositiveMs / (1000 * 60 * 60 * 24)) : 0;
+      const hours = hasValidTarget ? Math.ceil(remainingPositiveMs / (1000 * 60 * 60)) : 0;
+      const minutes = hasValidTarget ? Math.ceil(remainingPositiveMs / (1000 * 60)) : 0;
+
+      document.getElementById('daysLeft').textContent = formatWholeNumber(days);
+      document.getElementById('hoursLeft').textContent = formatWholeNumber(hours);
+      document.getElementById('minutesLeft').textContent = formatWholeNumber(minutes);
+
+      const targetSummary = !hasValidTarget
+        ? '<strong>Target:</strong> Choose a valid date and time.'
+        : `<strong>Target:</strong> ${target.toLocaleString()}`;
+      document.getElementById('targetSummary').innerHTML = targetSummary;
+      const statusLine = !hasValidTarget
+        ? '<strong class="expired">Select a valid countdown target.</strong>'
+        : remainingMs <= 0
+        ? '<strong class="expired">Countdown complete.</strong>'
+        : `<strong>Remaining:</strong> ${formatWholeNumber(days)} days, ${formatWholeNumber(hours)} hours, ${formatWholeNumber(minutes)} minutes.`;
+      document.getElementById('statusLine').innerHTML = statusLine;
+    }
+
+    targetInput.addEventListener('change', updateCountdown);
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+  </script>
+</body>
+</html>

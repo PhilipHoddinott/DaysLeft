@@ -93,6 +93,18 @@
       font-size: 0.88rem;
     }
 
+    .distance {
+      margin: 0 0 1.5rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfbf9;
+      color: var(--text);
+      text-align: center;
+      font-size: 1.05rem;
+      line-height: 1.4;
+    }
+
     .details {
       margin-top: 1rem;
       color: var(--muted);
@@ -133,6 +145,8 @@
       </div>
     </section>
 
+    <div class="distance" id="distanceLine">Finding how far away you are from Meghan and Philip...</div>
+
     <div class="details">
       <div id="targetSummary"></div>
       <div id="statusLine"></div>
@@ -141,10 +155,49 @@
 
   <script>
     const targetInput = document.getElementById('targetTime');
+    const distanceLine = document.getElementById('distanceLine');
     const formatter = new Intl.NumberFormat();
+    const bostonLocation = {
+      latitude: 42.4037877,
+      longitude: -71.1429813
+    };
 
     function formatWholeNumber(value) {
       return formatter.format(Math.max(0, value));
+    }
+
+    function toRadians(degrees) {
+      return degrees * Math.PI / 180;
+    }
+
+    function milesBetween(start, end) {
+      const earthRadiusMiles = 3958.8;
+      const latitudeDelta = toRadians(end.latitude - start.latitude);
+      const longitudeDelta = toRadians(end.longitude - start.longitude);
+      const startLatitude = toRadians(start.latitude);
+      const endLatitude = toRadians(end.latitude);
+      const haversine =
+        Math.sin(latitudeDelta / 2) ** 2 +
+        Math.cos(startLatitude) * Math.cos(endLatitude) *
+        Math.sin(longitudeDelta / 2) ** 2;
+
+      return earthRadiusMiles * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+    }
+
+    function updateDistance(position) {
+      const visitorLocation = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+      const milesAway = milesBetween(visitorLocation, bostonLocation);
+      const formattedMiles = milesAway < 10
+        ? milesAway.toFixed(1)
+        : Math.round(milesAway).toLocaleString();
+      distanceLine.textContent = `you are ${formattedMiles} miles away from Meghan and Philip (for now)`;
+    }
+
+    function showDistanceUnavailable() {
+      distanceLine.textContent = 'Allow location access to see how many miles away you are from Meghan and Philip (for now).';
     }
 
     function updateCountdown() {
@@ -178,6 +231,16 @@
     targetInput.addEventListener('change', updateCountdown);
     setInterval(updateCountdown, 1000);
     updateCountdown();
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(updateDistance, showDistanceUnavailable, {
+        enableHighAccuracy: false,
+        maximumAge: 1000 * 60 * 10,
+        timeout: 10000
+      });
+    } else {
+      showDistanceUnavailable();
+    }
   </script>
 </body>
 </html>
